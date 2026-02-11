@@ -1,0 +1,146 @@
+import tkinter as tk
+from tkinter import ttk
+import random
+import datetime
+import math
+
+# DRONE CORE ENGINE
+class DroneEngine:
+    def __init__(self):
+        self.altitude = 0
+        self.speed = 0
+        self.battery = 100.0
+        self.latitude = 17.3850
+        self.longitude = 78.4867
+        self.time = 0
+        self.distance = 0
+        self.state = "INITIALIZING"
+
+        self.log_file = open("telemetry_log.txt", "w")
+        self.log_file.write("Time,State,Altitude,Speed,Battery,Latitude,Longitude,Distance\n")
+
+    def update_mission_state(self):
+        if self.time <= 5:
+            self.state = "TAKEOFF"
+            self.altitude += 20
+            self.speed = 15
+
+        elif self.time <= 15:
+            self.state = "CRUISE"
+            self.altitude += random.uniform(-2, 2)
+            self.speed = 30
+
+        elif self.time <= 25:
+            self.state = "SURVEILLANCE"
+            self.altitude += random.uniform(-1, 1)
+            self.speed = 12
+
+        else:
+            self.state = "LANDING"
+            self.altitude -= 25
+            self.speed = 8
+
+    def update_position(self):
+        drift = 0.00012
+        self.latitude += drift
+        self.longitude += drift
+        self.distance += self.speed * 0.001
+
+    def drain_battery(self):
+        self.battery -= self.speed * 0.045
+
+    def log_telemetry(self):
+        self.log_file.write(f"{self.time},{self.state},{self.altitude},{self.speed},{self.battery},{self.latitude},{self.longitude},{self.distance}\n")
+
+    def step(self):
+        self.time += 1
+        self.update_mission_state()
+        self.update_position()
+        self.drain_battery()
+        self.log_telemetry()
+
+# ---------------- UI DASHBOARD ----------------
+class MissionControlUI:
+    def __init__(self, root):
+        self.root = root
+        self.engine = DroneEngine()
+
+        self.root.title("MAJOR AEROSPACE - AUTONOMOUS MISSION CONTROL")
+        self.root.geometry("700x500")
+        self.root.configure(bg="#0d1117")
+
+        self.build_interface()
+        self.update_dashboard()
+
+    def build_interface(self):
+        title = tk.Label(self.root,
+                         text="AUTONOMOUS DRONE MISSION CONTROL",
+                         font=("Consolas", 18, "bold"),
+                         fg="#00ffff",
+                         bg="#0d1117")
+        title.pack(pady=15)
+
+        self.state_label = tk.Label(self.root,
+                                    font=("Consolas", 14, "bold"),
+                                    fg="yellow",
+                                    bg="#0d1117")
+        self.state_label.pack()
+
+        self.alt_label = tk.Label(self.root, font=("Consolas", 12),
+                                  fg="white", bg="#0d1117")
+        self.alt_label.pack()
+
+        self.speed_label = tk.Label(self.root, font=("Consolas", 12),
+                                    fg="white", bg="#0d1117")
+        self.speed_label.pack()
+
+        self.gps_label = tk.Label(self.root, font=("Consolas", 12),
+                                  fg="white", bg="#0d1117")
+        self.gps_label.pack()
+
+        self.distance_label = tk.Label(self.root, font=("Consolas", 12),
+                                       fg="white", bg="#0d1117")
+        self.distance_label.pack()
+
+        tk.Label(self.root, text="Battery Level",
+                 font=("Consolas", 12),
+                 fg="white", bg="#0d1117").pack(pady=5)
+
+        self.battery_bar = ttk.Progressbar(self.root,
+                                           orient="horizontal",
+                                           length=400,
+                                           mode="determinate")
+        self.battery_bar.pack()
+
+        self.warning_label = tk.Label(self.root,
+                                      font=("Consolas", 12, "bold"),
+                                      fg="red",
+                                      bg="#0d1117")
+        self.warning_label.pack(pady=10)
+
+    def update_dashboard(self):
+        if self.engine.time >= 30:
+            self.state_label.config(text="MISSION COMPLETED SUCCESSFULLY")
+            return
+
+        self.engine.step()
+
+        self.state_label.config(text=f"STATE: {self.engine.state}")
+        self.alt_label.config(text=f"Altitude: {round(self.engine.altitude,2)} m")
+        self.speed_label.config(text=f"Speed: {self.engine.speed} m/s")
+        self.gps_label.config(text=f"GPS: ({round(self.engine.latitude,6)}, {round(self.engine.longitude,6)})")
+        self.distance_label.config(text=f"Distance Covered: {round(self.engine.distance,2)} km")
+
+        self.battery_bar["value"] = self.engine.battery
+
+        if self.engine.battery < 20:
+            self.warning_label.config(text="⚠ LOW BATTERY - RETURN TO BASE INITIATED")
+        else:
+            self.warning_label.config(text="")
+
+        self.root.after(1000, self.update_dashboard)
+
+# ---------------- RUN ----------------
+root = tk.Tk()
+app = MissionControlUI(root)
+root.mainloop()
