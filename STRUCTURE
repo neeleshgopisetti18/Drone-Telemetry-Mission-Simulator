@@ -1,0 +1,14 @@
+Autonomous-Drone-Mission-Control/
+│
+├── src/
+│   └── mission_control.py
+│
+├── assets/
+│   └── dashboard_preview.png
+│
+├── docs/
+│   └── Explanation_OnePage.pdf
+│
+├── requirements.txt
+│
+└── README.md
