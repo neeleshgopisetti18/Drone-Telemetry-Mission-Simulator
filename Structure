@@ -1,1 +1,11 @@
- Structure
+Drone-Telemetry-Mission-Simulator/
+│
+├── src/
+│   └── drone_simulator.py
+│
+├── screenshots/
+│   └── output.png   
+│
+├── README.md
+│
+└── Explanation_OnePage.pdf
